@@ -1,10 +1,9 @@
 package likelion13th.blog.service;
 //
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import likelion13th.blog.domain.Article;
-import likelion13th.blog.dto.AddArticleRequest;
-import likelion13th.blog.dto.ArticleResponse;
-import likelion13th.blog.dto.SimpleArticleResponse;
+import likelion13th.blog.dto.*;
 import likelion13th.blog.repository.ArticleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -87,5 +86,37 @@ public class ArticleService {
         /*2. ArticleResponse DTO 생성하여 반환 */
         return ArticleResponse.of(article);
     }
+    //글 수정
+    @Transactional
+    public ArticleResponse updateArticle(Long id, UpdateArticleRequest request) {
+        Article article=articleRepository.findById(id)
+                .orElseThrow(()->new EntityNotFoundException("해당 ID의 게시글을 찾으 수 없습니다"));
+
+
+        if(!article.getPassword().equals(request.getPassword())) {
+            throw new RuntimeException("해당 글에 대한 수정 권한이 없습니다.");
+        }
+
+        article.update(request.getTitle(), request.getContent());
+        article=articleRepository.save(article);
+
+        return ArticleResponse.of(article);
+
+
+    }
+    //글 삭제
+    @Transactional
+    public void deleteArticle(Long id, DeleteRequest request){
+        Article article=articleRepository.findById(id)
+                .orElseThrow(()-> new EntityNotFoundException("해당 ID의 게시글을 찾을 수 없습니다."));
+
+        if(!request.getPassword().equals(article.getPassword())) {
+            throw new RuntimeException("해당 글에 대한 삭제 권한이 없습니다.");
+        }
+
+        articleRepository.deleteById(id);
+
+    }
+
 
 }
